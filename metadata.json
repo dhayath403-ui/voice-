@@ -1,0 +1,8 @@
+{
+  "name": "Hay Kai",
+  "description": "The Digital Luthier - A sophisticated AI assistant for creative workflows with a premium glassmorphism aesthetic.",
+  "requestFramePermissions": [
+    "microphone",
+    "geolocation"
+  ]
+}
