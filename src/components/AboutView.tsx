@@ -16,8 +16,8 @@ export const AboutView: React.FC = () => {
           <div className="absolute inset-0 w-24 h-24 rounded-full bg-primary-dim opacity-20 blur-2xl animate-pulse"></div>
         </div>
         <div>
-          <h3 className="text-4xl font-black font-headline tracking-tighter mb-2">About Hay Kai</h3>
-          <p className="text-on-surface-variant max-w-md font-body leading-relaxed">The Digital Luthier for your creative workflow, powered by Hushh.</p>
+          <h3 className="text-4xl font-black font-headline tracking-tighter mb-2">About Hushh Kai</h3>
+          <p className="text-on-surface-variant max-w-md font-body leading-relaxed">Your Personal Data Agent, powered by Hushh.</p>
         </div>
       </motion.div>
 
@@ -35,7 +35,7 @@ export const AboutView: React.FC = () => {
             </a>
           </div>
           <p className="text-on-surface-variant leading-relaxed">
-            Hay Kai is a proud member of the <span className="text-primary font-semibold">Hushh</span> ecosystem. Hushh is the world's first personal data agent platform built with trust, privacy, and power at its core.
+            Hushh Kai is a proud member of the <span className="text-primary font-semibold">Hushh</span> ecosystem. Hushh is the world's first personal data agent platform built with trust, privacy, and power at its core.
           </p>
           <p className="text-on-surface-variant leading-relaxed">
             By integrating with Hushh, Kai becomes your <span className="text-secondary font-semibold">Personal Data Agent</span>, empowering you to own, manage, and utilize your digital footprint with absolute consent.
@@ -45,10 +45,10 @@ export const AboutView: React.FC = () => {
         <section className="bg-surface-container-low p-8 rounded-2xl border border-outline-variant/10 space-y-6">
           <h4 className="text-2xl font-bold font-headline text-white">The Vision</h4>
           <p className="text-on-surface-variant leading-relaxed">
-            Hay Kai is designed as a <span className="text-primary font-semibold">Digital Luthier</span>. Just as a luthier crafts and tunes fine musical instruments, Hay Kai tunes your digital workspace, workflow, and creative output. 
+            Hushh Kai is designed as your <span className="text-primary font-semibold">Personal Data Agent</span>. It tunes your digital workspace, workflow, and creative output by leveraging the power of your own data. 
           </p>
           <p className="text-on-surface-variant leading-relaxed">
-            Built on the cutting edge of generative AI, Hay Kai doesn't just provide answers—it provides <span className="text-secondary font-semibold">resonance</span>. It understands the nuances of your intent, whether you're coding, designing, or navigating the physical world.
+            Built on the cutting edge of generative AI, Hushh Kai doesn't just provide answers—it provides <span className="text-secondary font-semibold">resonance</span>. It understands the nuances of your intent, whether you're coding, designing, or navigating the physical world.
           </p>
         </section>
 

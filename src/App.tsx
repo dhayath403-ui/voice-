@@ -11,12 +11,15 @@ import { HistoryView } from './components/HistoryView';
 import { SettingsView } from './components/SettingsView';
 import { AboutView } from './components/AboutView';
 import { FinanceView } from './components/FinanceView';
+import { AlphaAlohaView } from './components/AlphaAlohaView';
 import { AssistantPill } from './components/AssistantPill';
 import { AssistantPanel } from './components/AssistantPanel';
+import { FaceLockScreen } from './components/FaceLockScreen';
+import { VoiceAssistant } from './components/VoiceAssistant';
 import { AnimatePresence, motion } from 'motion/react';
 import { cn } from './lib/utils';
 
-import { SettingsProvider } from './context/SettingsContext';
+import { SettingsProvider, useSettings } from './context/SettingsContext';
 
 export default function App() {
   return (
@@ -27,6 +30,7 @@ export default function App() {
 }
 
 function AppContent() {
+  const { isLocked, faceLockEnabled, setIsLocked } = useSettings();
   const [activeTab, setActiveTab] = useState('assistant');
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
@@ -50,6 +54,8 @@ function AppContent() {
         return <AboutView />;
       case 'finance':
         return <FinanceView />;
+      case 'alpha-aloha':
+        return <AlphaAlohaView />;
       default:
         return <Dashboard />;
     }
@@ -57,6 +63,12 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-background text-white overflow-x-hidden">
+      <AnimatePresence>
+        {isLocked && faceLockEnabled && (
+          <FaceLockScreen />
+        )}
+      </AnimatePresence>
+
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       
       <div className="xl:pl-64 flex flex-col min-h-screen">
@@ -82,7 +94,7 @@ function AppContent() {
         {/* Mobile Bottom Nav */}
         <nav className="xl:hidden fixed bottom-0 left-0 right-0 h-16 mica-effect flex justify-around items-center px-4 z-[60] border-t border-outline-variant/10">
           {[
-            { id: 'assistant', label: 'Dashboard', icon: 'dashboard' },
+            { id: 'assistant', label: 'Hushh Kai', icon: 'dashboard' },
             { id: 'finance', label: 'Finance', icon: 'trending_up' },
             { id: 'history', label: 'History', icon: 'history' },
             { id: 'settings', label: 'Settings', icon: 'settings' },
@@ -109,6 +121,20 @@ function AppContent() {
           <AssistantPanel onClose={() => setIsPanelOpen(false)} />
         )}
       </AnimatePresence>
+
+      {/* Floating Voice Assistant */}
+      <div className="fixed bottom-8 right-8 z-50">
+        <div className="flex flex-col items-end gap-4">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="px-4 py-2 rounded-xl bg-surface-container-highest/90 backdrop-blur-md border border-outline-variant/20 shadow-xl"
+          >
+            <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Hushh Kai Ready</p>
+          </motion.div>
+          <VoiceAssistant />
+        </div>
+      </div>
 
       <div className="fixed inset-0 -z-10 opacity-[0.03] pointer-events-none">
         <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(#484848 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>

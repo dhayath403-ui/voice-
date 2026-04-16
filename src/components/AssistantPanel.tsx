@@ -6,9 +6,10 @@ import { useSettings } from '../context/SettingsContext';
 import { PromptGuide } from './PromptGuide';
 import { AudioPlayer } from './AudioPlayer';
 import { MapVisualization } from './MapVisualization';
+import { TaskScheduler } from './TaskScheduler';
 import { Tooltip } from './Tooltip';
 import { cn } from '../lib/utils';
-import { HistoryEntry } from '../types';
+import { HistoryEntry, ScheduledTask } from '../types';
 
 interface Message {
   id: string;
@@ -46,12 +47,44 @@ const TypingIndicator = () => (
   </div>
 );
 
+const SkeletonLoader = () => (
+  <div className="flex flex-col gap-3 w-full min-w-[240px] md:min-w-[320px]">
+    <motion.div 
+      animate={{ opacity: [0.3, 0.6, 0.3] }}
+      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+      className="h-3 bg-white/10 rounded-full w-3/4" 
+    />
+    <motion.div 
+      animate={{ opacity: [0.3, 0.6, 0.3] }}
+      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+      className="h-3 bg-white/10 rounded-full w-full" 
+    />
+    <motion.div 
+      animate={{ opacity: [0.3, 0.6, 0.3] }}
+      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+      className="h-3 bg-white/10 rounded-full w-5/6" 
+    />
+    <div className="flex gap-2 mt-2">
+      <motion.div 
+        animate={{ opacity: [0.2, 0.4, 0.2] }}
+        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+        className="h-8 w-24 bg-white/5 rounded-xl" 
+      />
+      <motion.div 
+        animate={{ opacity: [0.2, 0.4, 0.2] }}
+        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+        className="h-8 w-20 bg-white/5 rounded-xl" 
+      />
+    </div>
+  </div>
+);
+
 interface AssistantPanelProps {
   onClose: () => void;
 }
 
 export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
-  const { language, userLanguage, voice } = useSettings();
+  const { language, userLanguage, voice, lens, byokEnabled } = useSettings();
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
   const [messages, setMessages] = useState<Message[]>([
@@ -70,6 +103,8 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
   const [recordedText, setRecordedText] = useState('');
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [showPromptGuide, setShowPromptGuide] = useState(false);
+  const [showTaskScheduler, setShowTaskScheduler] = useState(false);
+  const [isUnlocking, setIsUnlocking] = useState(false);
   const pressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isHoldingRef = useRef(false);
   const liveSessionMessageIds = useRef<string[]>([]);
@@ -177,7 +212,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
   const triggerImageGeneration = async (prompt: string) => {
     setIsLoading(true);
     // First get a text confirmation
-    const assistantResponse = await generateAssistantResponse(`The user wants to generate an image: "${prompt}". Provide a brief confirmation.`, language, userLanguage);
+    const assistantResponse = await generateAssistantResponse(`The user wants to generate an image: "${prompt}". Provide a brief confirmation.`, language, userLanguage, lens, byokEnabled);
     
     const assistantMessage: Message = {
       id: (Date.now() + 1).toString(),
@@ -313,6 +348,14 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
     setIsLoading(true);
     stopRef.current = false;
 
+    // Simulate "Security Tax" for sensitive queries if BYOK is enabled
+    const isSensitive = /vault|private|secret|password|key|financial|fund|balance/i.test(currentInput);
+    if (byokEnabled && isSensitive) {
+      setIsUnlocking(true);
+      await new Promise(resolve => setTimeout(resolve, 800)); // Deliberate "tax"
+      setIsUnlocking(false);
+    }
+
     // Check for image generation intent
     const isImageRequest = /generate|create|draw|make|show.*image|picture|photo/i.test(currentInput);
 
@@ -331,7 +374,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
       try {
         const location = await getUserLocation();
 
-        const stream = await generateAssistantResponseStream(currentInput, language, userLanguage, location);
+        const stream = await generateAssistantResponseStream(currentInput, language, userLanguage, location, lens, byokEnabled);
         let fullText = '';
         let functionCall = null;
         let groundingLinks: { title: string; url: string }[] = [];
@@ -438,6 +481,26 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
                 } : msg
               ));
             }
+          } else if (name === 'schedule_task') {
+            const { title, dateTime, recurring = 'none' } = args as { title: string, dateTime: string, recurring?: string };
+            const newTask: ScheduledTask = {
+              id: `task-${Date.now()}`,
+              title,
+              dateTime,
+              recurring: recurring as any,
+              status: 'pending',
+              timestamp: new Date(dateTime).getTime()
+            };
+            
+            const existing = JSON.parse(localStorage.getItem('hushh_kai_tasks') || '[]');
+            localStorage.setItem('hushh_kai_tasks', JSON.stringify([newTask, ...existing]));
+            
+            if (!fullText) {
+              setMessages(prev => prev.map(msg => 
+                msg.id === assistantMessageId ? { ...msg, content: `I've scheduled your task: "${title}" for ${new Date(dateTime).toLocaleString()}.` } : msg
+              ));
+            }
+            setShowTaskScheduler(true);
           } else if (name === 'get_project_structure') {
             const structure = `
               Hay Kai Application Structure:
@@ -680,9 +743,29 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
               msg.id === assistantMessageId ? { ...msg, content: "I'm sorry, I couldn't access your real-time location. Please ensure GPS is enabled." } : msg
             ));
           }
+        } else if (name === 'schedule_task') {
+            const { title, dateTime, recurring = 'none' } = args as { title: string, dateTime: string, recurring?: string };
+            const newTask: ScheduledTask = {
+              id: `task-${Date.now()}`,
+              title,
+              dateTime,
+              recurring: recurring as any,
+              status: 'pending',
+              timestamp: new Date(dateTime).getTime()
+            };
+            
+            const existing = JSON.parse(localStorage.getItem('hushh_kai_tasks') || '[]');
+            localStorage.setItem('hushh_kai_tasks', JSON.stringify([newTask, ...existing]));
+            
+            if (!fullText) {
+              setMessages(prev => prev.map(msg => 
+                msg.id === assistantMessageId ? { ...msg, content: `I've scheduled your task: "${title}" for ${new Date(dateTime).toLocaleString()}.` } : msg
+              ));
+            }
+            setShowTaskScheduler(true);
+          }
         }
-      }
-    } catch (error) {
+      } catch (error) {
       console.error("Audio streaming error:", error);
       setMessages(prev => prev.map(msg => 
         msg.id === assistantMessageId ? { ...msg, content: "I'm sorry, I couldn't process the audio." } : msg
@@ -692,11 +775,22 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
     }
   };
 
+  const [viewMode, setViewMode] = useState<'chat' | 'voice'>('chat');
+
+  useEffect(() => {
+    if (isLiveActive) {
+      setViewMode('voice');
+    } else {
+      setViewMode('chat');
+    }
+  }, [isLiveActive]);
+
   const toggleLive = () => {
     if (isLiveActive) {
       stopLiveSession();
     } else {
       liveSessionMessageIds.current = [];
+      setShowSavePrompt(false);
       startLiveSession();
     }
   };
@@ -812,6 +906,26 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex bg-surface-container-highest/50 p-1 rounded-full border border-outline-variant/10 mr-2">
+            <button 
+              onClick={() => setViewMode('chat')}
+              className={cn(
+                "px-3 py-1 rounded-full text-[10px] font-bold uppercase transition-all",
+                viewMode === 'chat' ? "bg-primary text-black" : "text-on-surface-variant hover:text-on-surface"
+              )}
+            >
+              Chat
+            </button>
+            <button 
+              onClick={() => setViewMode('voice')}
+              className={cn(
+                "px-3 py-1 rounded-full text-[10px] font-bold uppercase transition-all",
+                viewMode === 'voice' ? "bg-secondary text-black" : "text-on-surface-variant hover:text-on-surface"
+              )}
+            >
+              Voice
+            </button>
+          </div>
           {(isLoading || isLiveActive) && (
             <Tooltip content="Stop current operation" position="bottom">
               <button 
@@ -845,9 +959,28 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
               <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary">auto_awesome</span>
             </button>
           </Tooltip>
+          <Tooltip content="View Scheduled Tasks" position="bottom">
+            <button 
+              onClick={() => setShowTaskScheduler(true)}
+              aria-label="View Scheduled Tasks"
+              className="p-2 rounded-full hover:bg-surface-container-highest/50 transition-colors group relative"
+            >
+              <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary">event_upcoming</span>
+            </button>
+          </Tooltip>
           <Tooltip content="Close Assistant" position="bottom">
             <button 
-              onClick={onClose}
+              onClick={() => {
+                if (isLiveActive) {
+                  stopLiveSession();
+                } else if (showSavePrompt) {
+                  // If prompt is showing, we can either force a decision or just close
+                  // Let's just close for now, but usually we'd want to save or discard
+                  onClose();
+                } else {
+                  onClose();
+                }
+              }}
               aria-label="Close Assistant Panel"
               className="p-2 rounded-full hover:bg-surface-container-highest/50 transition-colors"
             >
@@ -886,8 +1019,107 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
         </div>
       )}
 
-      {/* Chat Thread */}
+      {/* Chat Thread / Voice Mode */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar relative">
+        <AnimatePresence mode="wait">
+          {viewMode === 'voice' ? (
+            <motion.div
+              key="voice-mode"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="h-full flex flex-col items-center justify-center space-y-12"
+            >
+              <div className="relative flex items-center justify-center">
+                <motion.div
+                  animate={{
+                    scale: isLiveActive ? [1, 1.2, 1] : 1,
+                    opacity: isLiveActive ? [0.2, 0.4, 0.2] : 0.1,
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="absolute w-64 h-64 rounded-full bg-secondary blur-3xl"
+                />
+                <div className="relative w-48 h-48 rounded-full border-2 border-secondary/20 flex items-center justify-center">
+                  <div className="absolute inset-0 rounded-full border border-secondary/10 animate-ping" />
+                  <div className={cn(
+                    "w-32 h-32 rounded-full bg-gradient-to-br from-secondary/40 to-primary/40 flex items-center justify-center shadow-2xl transition-all duration-500",
+                    isLiveActive ? "scale-110 rotate-12" : "grayscale opacity-50"
+                  )}>
+                    <span className={cn(
+                      "material-symbols-outlined text-5xl transition-all",
+                      isLiveActive ? "text-white fill" : "text-on-surface-variant"
+                    )}>
+                      {isLiveActive ? 'mic' : 'mic_off'}
+                    </span>
+                  </div>
+                  
+                  {/* Audio Visualizer Rings */}
+                  {[...Array(3)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      animate={{
+                        scale: isLiveActive ? [1, 1.5 + i * 0.2, 1] : 1,
+                        opacity: isLiveActive ? [0.5, 0, 0.5] : 0,
+                      }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        delay: i * 0.4,
+                      }}
+                      className="absolute inset-0 rounded-full border border-secondary/30"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="w-full max-w-md space-y-6 text-center">
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-secondary uppercase tracking-[0.2em]">Live Transcription</p>
+                  <div className="min-h-[60px] p-4 rounded-2xl bg-surface-container-low border border-outline-variant/10">
+                    <p className="text-sm text-on-background font-medium italic">
+                      {liveTranscript || (isLiveActive ? "Listening for your command..." : "Voice session inactive")}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Kai's Response</p>
+                  <div className="min-h-[80px] p-4 rounded-2xl bg-primary/5 border border-primary/10">
+                    <p className="text-sm text-on-background leading-relaxed">
+                      {liveAssistantTranscript || (isLiveActive ? "..." : "Tap the mic to start")}
+                    </p>
+                  </div>
+                </div>
+
+                {!isLiveActive && (
+                  <button
+                    onClick={toggleLive}
+                    className="px-8 py-3 rounded-full bg-secondary text-black font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all"
+                  >
+                    Start Voice Command
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="chat-mode"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-8"
+            >
+              {isUnlocking && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="sticky top-0 left-1/2 -translate-x-1/2 z-20 bg-secondary/90 text-black px-4 py-2 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-sm border border-secondary/20 mb-4"
+          >
+            <span className="material-symbols-outlined text-sm animate-spin">key</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest">Unlocking Secure Vault...</span>
+          </motion.div>
+        )}
         <AnimatePresence>
           {showPromptGuide && (
             <PromptGuide 
@@ -898,6 +1130,9 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
                 setTimeout(() => inputRef.current?.focus(), 100);
               }}
             />
+          )}
+          {showTaskScheduler && (
+            <TaskScheduler onClose={() => setShowTaskScheduler(false)} />
           )}
           {showSavePrompt && (
             <motion.div 
@@ -911,7 +1146,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
                   <span className="material-symbols-outlined text-primary">save</span>
                 </div>
                 <div>
-                  <h4 className="font-headline font-bold text-white">Save Conversation?</h4>
+                  <h4 className="font-headline font-bold text-on-background">Save Conversation?</h4>
                   <p className="text-xs text-on-surface-variant">Would you like to keep this voice session in your chat history?</p>
                 </div>
               </div>
@@ -970,7 +1205,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
               "px-5 py-3 rounded-2xl text-sm leading-relaxed",
               msg.role === 'user' 
                 ? "bg-surface-container-highest text-on-surface rounded-tr-none" 
-                : "bg-surface-container/60 text-white rounded-tl-none border border-outline-variant/10"
+                : "bg-surface-container/60 text-on-background rounded-tl-none border border-outline-variant/10"
             )}>
               {msg.audioUrl ? (
                 <div className="flex flex-col gap-2">
@@ -978,7 +1213,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
                     <span className="material-symbols-outlined text-sm">mic</span>
                     Audio Message
                   </div>
-                  <AudioPlayer src={msg.audioUrl} className="bg-black/20 border-none p-2" />
+                  <AudioPlayer src={msg.audioUrl} className="bg-surface-container-highest/20 border-none p-2" />
                 </div>
               ) : msg.content ? (
                 <>
@@ -988,13 +1223,13 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
                     </div>
                   ))}
                   {isLoading && messages[messages.length - 1].id === msg.id && (
-                    <div className="mt-2">
-                      <TypingIndicator />
+                    <div className="mt-4 pt-4 border-t border-outline-variant/10">
+                      <SkeletonLoader />
                     </div>
                   )}
                 </>
               ) : (
-                <TypingIndicator />
+                <SkeletonLoader />
               )}
               
               {msg.error && (
@@ -1061,12 +1296,37 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
                 {isLiveConnecting ? 'Connecting voice...' : 'Hay Kai is thinking...'}
               </span>
             </div>
-            <div className="flex gap-1.5 px-5 py-4 bg-surface-container/40 rounded-2xl rounded-tl-none border border-outline-variant/10">
-              <TypingIndicator />
+            <div className="px-5 py-4 bg-surface-container/40 rounded-2xl rounded-tl-none border border-outline-variant/10">
+              <SkeletonLoader />
             </div>
           </div>
         )}
-      </div>
+
+        {messages.length === 0 && !isLoading && !isLiveActive && (
+          <div className="h-full flex flex-col items-center justify-center text-center p-8 mt-12">
+            <div className="w-20 h-20 rounded-full bg-surface-container-highest flex items-center justify-center mb-6">
+              <span className="material-symbols-outlined text-4xl text-primary">chat_bubble</span>
+            </div>
+            <h4 className="text-xl font-headline font-bold mb-2">Start a Conversation</h4>
+            <p className="text-sm text-on-surface-variant max-w-xs">Ask me anything about your data, finance, or creative workflows.</p>
+          </div>
+        )}
+
+        {/* Live Transcript Overlay */}
+        {isLiveActive && liveTranscript && viewMode === 'chat' && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="sticky bottom-0 left-0 right-0 z-20 bg-surface-container-highest/80 backdrop-blur-md p-4 rounded-2xl border border-outline-variant/20 mb-4"
+          >
+            <p className="text-[10px] font-bold text-on-surface-variant uppercase mb-1">Live Transcript</p>
+            <p className="text-sm text-on-background italic">"{liveTranscript}"</p>
+          </motion.div>
+        )}
+      </motion.div>
+    )}
+  </AnimatePresence>
+</div>
 
       {/* Input Area */}
       <div className="p-6 bg-surface-container-low/80 backdrop-blur-lg border-t border-outline-variant/10">
@@ -1084,7 +1344,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
             <input 
               ref={inputRef}
               aria-label="Ask Hay Kai a question"
-              className="flex-1 bg-transparent border-none focus:ring-0 text-sm font-body text-white py-3 px-2" 
+              className="flex-1 bg-transparent border-none focus:ring-0 text-sm font-body text-on-background py-3 px-2" 
               placeholder={isRecording ? (recordedText || "Listening...") : (isLiveActive ? "Voice mode active..." : "Ask anything...")}
               type="text"
               value={isRecording ? recordedText : inputValue}

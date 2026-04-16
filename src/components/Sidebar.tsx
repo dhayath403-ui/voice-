@@ -11,18 +11,19 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
   const { profilePicture, displayName } = useSettings();
   const navItems = [
-    { id: 'assistant', label: 'Dashboard', icon: 'dashboard', tooltip: 'Personal Data Command Center' },
+    { id: 'assistant', label: 'Hushh Kai Dashboard', icon: 'dashboard', tooltip: 'Personal Data Command Center' },
     { id: 'history', label: 'History', icon: 'history', tooltip: 'View Past Conversations' },
     { id: 'settings', label: 'Settings', icon: 'settings', tooltip: 'App Configuration' },
     { id: 'finance', label: 'Finance', icon: 'trending_up', tooltip: 'Hushh Financial Intelligence' },
-    { id: 'about', label: 'About', icon: 'info', tooltip: 'About Hay Kai' },
+    { id: 'alpha-aloha', label: 'Alpha Aloha', icon: 'auto_awesome', tooltip: 'Evergreen Alpha Aloha Fund A' },
+    { id: 'about', label: 'About', icon: 'info', tooltip: 'About Hushh Kai' },
   ];
 
   return (
-    <aside className="hidden xl:flex fixed left-0 top-0 h-screen w-64 bg-[#131313] flex-col py-8 px-4 rounded-r-xl z-20">
+    <aside className="hidden xl:flex fixed left-0 top-0 h-screen w-64 bg-surface-container-low flex-col py-8 px-4 rounded-r-xl z-20 border-r border-outline-variant/10">
       <div className="mb-12 px-4">
-        <h2 className="text-xl font-bold tracking-tighter text-white font-headline">Hay Kai</h2>
-        <p className="text-xs text-gray-400 font-headline">The Digital Luthier</p>
+        <h2 className="text-xl font-bold tracking-tighter text-on-background font-headline">Hushh Kai</h2>
+        <p className="text-xs text-on-surface-variant font-headline">Your Personal Data Agent</p>
       </div>
 
       <Tooltip content="Start a fresh conversation" position="right" className="w-full">
@@ -40,8 +41,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left w-full",
                 activeTab === item.id 
-                  ? "text-primary font-bold bg-[#262626]" 
-                  : "text-gray-400 hover:bg-[#262626]"
+                  ? "text-primary font-bold bg-surface-container-highest" 
+                  : "text-on-surface-variant hover:bg-surface-container-highest"
               )}
             >
               <span className={cn("material-symbols-outlined", activeTab === item.id && "fill")}>
@@ -66,7 +67,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
           )}
         </div>
         <div>
-          <p className="text-xs font-bold text-white truncate max-w-[120px]">{displayName || 'System Ready'}</p>
+          <p className="text-xs font-bold text-on-background truncate max-w-[120px]">{displayName || 'System Ready'}</p>
           <div className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
             <span className="text-[10px] text-on-surface-variant uppercase tracking-tighter">Synchronized</span>

@@ -1,8 +1,9 @@
 {
-  "name": "Hay Kai",
-  "description": "The Digital Luthier - A sophisticated AI assistant for creative workflows with a premium glassmorphism aesthetic.",
+  "name": "Hushh Kai",
+  "description": "Your Personal Data Agent - A sophisticated AI assistant powered by Hushh for creative workflows and data sovereignty.",
   "requestFramePermissions": [
     "microphone",
-    "geolocation"
+    "geolocation",
+    "camera"
   ]
 }

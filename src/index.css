@@ -1,25 +1,71 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
+:root {
+  --background: #ffffff;
+  --on-background: #0e0e0e;
+  --primary: #0061a4;
+  --primary-dim: #1a73e8;
+  --secondary: #6750a4;
+  --secondary-dim: #7f67be;
+  --surface: #fdfbff;
+  --surface-container-low: #f7f2fa;
+  --surface-container-highest: #e6e1e5;
+  --outline-variant: #c9c5d0;
+  --on-surface-variant: #49454f;
+  --mica-bg: rgba(247, 242, 250, 0.7);
+  --glass-bg-1: rgba(230, 225, 229, 0.4);
+  --glass-bg-2: rgba(247, 242, 250, 0.4);
+}
+
+.dark {
+  --background: #0e0e0e;
+  --on-background: #ffffff;
+  --primary: #73b1ff;
+  --primary-dim: #4ca0ff;
+  --secondary: #9791ff;
+  --secondary-dim: #675bff;
+  --surface: #0e0e0e;
+  --surface-container-low: #131313;
+  --surface-container-highest: #262626;
+  --outline-variant: #484848;
+  --on-surface-variant: #adaaaa;
+  --mica-bg: rgba(19, 19, 19, 0.7);
+  --glass-bg-1: rgba(38, 38, 38, 0.4);
+  --glass-bg-2: rgba(25, 26, 26, 0.4);
+}
+
 @theme {
   --font-headline: "Manrope", sans-serif;
   --font-body: "Inter", sans-serif;
   
-  --color-background: #0e0e0e;
-  --color-primary: #73b1ff;
-  --color-primary-dim: #4ca0ff;
-  --color-secondary: #9791ff;
-  --color-secondary-dim: #675bff;
-  --color-surface: #0e0e0e;
-  --color-surface-container-low: #131313;
-  --color-surface-container-highest: #262626;
-  --color-outline-variant: #484848;
-  --color-on-surface-variant: #adaaaa;
+  --color-background: var(--background);
+  --color-on-background: var(--on-background);
+  --color-primary: var(--primary);
+  --color-primary-dim: var(--primary-dim);
+  --color-secondary: var(--secondary);
+  --color-secondary-dim: var(--secondary-dim);
+  --color-surface: var(--surface);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-outline-variant: var(--outline-variant);
+  --color-on-surface-variant: var(--on-surface-variant);
+}
+
+@layer utilities {
+  .bg-grid {
+    background-size: 50px 50px;
+    background-image: 
+      linear-gradient(to right, var(--outline-variant) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--outline-variant) 1px, transparent 1px);
+    mask-image: radial-gradient(circle at center, black, transparent 90%);
+    opacity: 0.15;
+  }
 }
 
 @layer base {
   body {
-    @apply bg-background text-white font-body relative overflow-x-hidden;
+    @apply bg-background text-on-background font-body relative overflow-x-hidden transition-colors duration-300;
   }
 
   body::before {
@@ -48,11 +94,11 @@
 
 .mica-effect {
   backdrop-filter: blur(40px) saturate(180%);
-  background-color: rgba(19, 19, 19, 0.7);
+  background-color: var(--mica-bg);
 }
 
 .glass-card {
-  background: linear-gradient(135deg, rgba(38, 38, 38, 0.4) 0%, rgba(25, 26, 26, 0.4) 100%);
+  background: linear-gradient(135deg, var(--glass-bg-1) 0%, var(--glass-bg-2) 100%);
   backdrop-filter: blur(20px);
 }
 

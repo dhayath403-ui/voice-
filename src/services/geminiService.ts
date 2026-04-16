@@ -71,6 +71,29 @@ const analyzeStockIntentTool: FunctionDeclaration = {
   },
 };
 
+const scheduleTaskTool: FunctionDeclaration = {
+  name: "schedule_task",
+  description: "Schedules a reminder or a recurring task for the user at a specific date and time.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      title: {
+        type: Type.STRING,
+        description: "The title or description of the task/reminder.",
+      },
+      dateTime: {
+        type: Type.STRING,
+        description: "The ISO 8601 date and time for the task (e.g., '2026-04-20T10:00:00Z').",
+      },
+      recurring: {
+        type: Type.STRING,
+        description: "Frequency of the task if recurring (e.g., 'daily', 'weekly', 'monthly', 'none').",
+      }
+    },
+    required: ["title", "dateTime"],
+  },
+};
+
 // In Vite, process.env is not always available. 
 // The platform injects GEMINI_API_KEY into the environment.
 const apiKey = process.env.GEMINI_API_KEY || "";
@@ -79,11 +102,20 @@ if (!apiKey) {
 }
 const ai = new GoogleGenAI({ apiKey });
 
-export const generateAssistantResponse = async (prompt: string, language: string = 'English', userLanguage: string = 'English') => {
+export const generateAssistantResponse = async (prompt: string, language: string = 'English', userLanguage: string = 'English', lens: string = 'Balanced', byokEnabled: boolean = false) => {
   if (!apiKey) {
     console.error("GEMINI_API_KEY is missing. Please check your environment variables.");
     return { text: "I'm sorry, my neural link is currently offline (API key missing). Please contact support." };
   }
+
+  const lensInstruction = `
+    ACTIVE INVESTMENT LENS: ${lens}
+    ${lens === 'Growth' ? 'PRIORITY: Monetization potential and high-velocity data fetching. Be proactive in suggesting growth opportunities.' : ''}
+    ${lens === 'Defensive' ? 'PRIORITY: Audit-first mode. Enforce strict privacy boundaries and show exactly where data is NOT going.' : ''}
+    ${lens === 'Balanced' ? 'PRIORITY: Optimized risk/reward ratio. Balance growth with privacy.' : ''}
+    
+    SECURITY STATUS: ${byokEnabled ? 'True Client-Side BYOK Active (Hardware-backed keys)' : 'Standard JWT Identity Access'}
+  `;
 
   const translationInstruction = userLanguage !== language 
     ? `The user's preferred language is ${userLanguage}, but your response language is ${language}. 
@@ -121,7 +153,7 @@ export const generateAssistantResponse = async (prompt: string, language: string
         
         If the user asks to generate an image, respond with a short confirmation and then I will handle the image generation separately.
         
-        If the user asks to open an app like WhatsApp, Spotify, or Zoom, use the 'open_app' tool.
+        If the user asks to open an app like WhatsApp, Spotify, Zoom, or Discord, use the 'open_app' tool.
         
         If you need to show a location on a map or calculate distance, use 'get_location_coordinates' to get the coordinates of the destination.
         
@@ -133,8 +165,10 @@ export const generateAssistantResponse = async (prompt: string, language: string
         
         If the user provides a URL and asks questions about it, use the 'urlContext' tool to access and analyze the content of that URL.
         
+        If the user asks to schedule a task, reminder, or appointment, use the 'schedule_task' tool.
+        
         If the user asks for real-time information, news, or sports updates, use the 'googleSearch' tool to find the most current information.`,
-        tools: [{ functionDeclarations: [openAppTool, getLocationCoordinatesTool, showMyLocationTool, getProjectStructureTool, analyzeStockIntentTool] }, { urlContext: {} }, { googleSearch: {} }],
+        tools: [{ functionDeclarations: [openAppTool, getLocationCoordinatesTool, showMyLocationTool, getProjectStructureTool, analyzeStockIntentTool, scheduleTaskTool] }, { urlContext: {} }, { googleSearch: {} }],
         toolConfig: { includeServerSideToolInvocations: true },
       }
     });
@@ -157,10 +191,19 @@ export const generateAssistantResponse = async (prompt: string, language: string
   }
 };
 
-export const generateAssistantResponseStream = async (prompt: string, language: string = 'English', userLanguage: string = 'English', location?: { latitude: number, longitude: number }) => {
+export const generateAssistantResponseStream = async (prompt: string, language: string = 'English', userLanguage: string = 'English', location?: { latitude: number, longitude: number }, lens: string = 'Balanced', byokEnabled: boolean = false) => {
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY is missing.");
   }
+
+  const lensInstruction = `
+    ACTIVE INVESTMENT LENS: ${lens}
+    ${lens === 'Growth' ? 'PRIORITY: Monetization potential and high-velocity data fetching. Be proactive in suggesting growth opportunities.' : ''}
+    ${lens === 'Defensive' ? 'PRIORITY: Audit-first mode. Enforce strict privacy boundaries and show exactly where data is NOT going.' : ''}
+    ${lens === 'Balanced' ? 'PRIORITY: Optimized risk/reward ratio. Balance growth with privacy.' : ''}
+    
+    SECURITY STATUS: ${byokEnabled ? 'True Client-Side BYOK Active (Hardware-backed keys)' : 'Standard JWT Identity Access'}
+  `;
 
   const translationInstruction = userLanguage !== language 
     ? `The user's preferred language is ${userLanguage}, but your response language is ${language}. 
@@ -208,8 +251,10 @@ export const generateAssistantResponseStream = async (prompt: string, language: 
       
       If the user provides a URL and asks questions about it, use the 'urlContext' tool to access and analyze the content of that URL.
       
+      If the user asks to schedule a task, reminder, or appointment, use the 'schedule_task' tool.
+      
       If the user asks for real-time information, news, or sports updates, use the 'googleSearch' tool to find the most current information.`,
-      tools: [{ functionDeclarations: [openAppTool, getLocationCoordinatesTool, showMyLocationTool, getProjectStructureTool, analyzeStockIntentTool] }, { urlContext: {} }, { googleSearch: {} }],
+      tools: [{ functionDeclarations: [openAppTool, getLocationCoordinatesTool, showMyLocationTool, getProjectStructureTool, analyzeStockIntentTool, scheduleTaskTool] }, { urlContext: {} }, { googleSearch: {} }],
       toolConfig: {
         includeServerSideToolInvocations: true,
         retrievalConfig: location ? {
@@ -305,8 +350,10 @@ export const generateAudioResponse = async (audioBase64: string, mimeType: strin
         
         If the user provides a URL and asks questions about it, use the 'urlContext' tool to access and analyze the content of that URL.
         
+        If the user asks to schedule a task, reminder, or appointment, use the 'schedule_task' tool.
+        
         If the user asks for real-time information, news, or sports updates, use the 'googleSearch' tool to find the most current information.`,
-        tools: [{ functionDeclarations: [openAppTool, getProjectStructureTool, analyzeStockIntentTool] }, { urlContext: {} }, { googleSearch: {} }],
+        tools: [{ functionDeclarations: [openAppTool, getProjectStructureTool, analyzeStockIntentTool, scheduleTaskTool] }, { urlContext: {} }, { googleSearch: {} }],
         toolConfig: { includeServerSideToolInvocations: true },
       }
     });
@@ -381,10 +428,12 @@ export const generateAudioResponseStream = async (audioBase64: string, mimeType:
       
       If the user provides a URL and asks questions about it, use the 'urlContext' tool to access and analyze the content of that URL.
       
+      If the user asks to schedule a task, reminder, or appointment, use the 'schedule_task' tool.
+      
       If the user asks for real-time information, news, or sports updates, use the 'googleSearch' tool to find the most current information.
       
       ${translationInstruction}`,
-      tools: [{ functionDeclarations: [openAppTool, showMyLocationTool, getProjectStructureTool, analyzeStockIntentTool] }, { urlContext: {} }, { googleSearch: {} }],
+      tools: [{ functionDeclarations: [openAppTool, showMyLocationTool, getProjectStructureTool, analyzeStockIntentTool, scheduleTaskTool] }, { urlContext: {} }, { googleSearch: {} }],
       toolConfig: { 
         includeServerSideToolInvocations: true,
         retrievalConfig: location ? {

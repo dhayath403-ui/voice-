@@ -14,12 +14,21 @@ export const SettingsView: React.FC = () => {
     profilePicture, 
     displayName,
     email,
+    faceLockEnabled,
+    lens,
+    byokEnabled,
+    theme,
     setLanguage, 
     setUserLanguage, 
     setVoice, 
+    setLens,
+    setTheme,
+    setByokEnabled,
     setVoiceTrigger,
     setDisplayName,
-    setEmail
+    setEmail,
+    setFaceLockEnabled,
+    setIsLocked
   } = useSettings();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
@@ -63,8 +72,44 @@ export const SettingsView: React.FC = () => {
     }
   };
 
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+  const handleClearData = () => {
+    localStorage.clear();
+    window.location.reload();
+  };
+
   return (
     <div className="flex-1 px-8 pb-20 max-w-4xl mx-auto pt-20">
+      {/* Confirmation Dialog Overlay */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-surface-container-highest p-8 rounded-3xl border border-red-500/30 shadow-2xl max-w-md w-full animate-in fade-in zoom-in duration-200">
+            <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mb-6 mx-auto">
+              <span className="material-symbols-outlined text-red-500 text-3xl">warning</span>
+            </div>
+            <h3 className="text-2xl font-black font-headline text-center mb-2">Clear All Data?</h3>
+            <p className="text-on-surface-variant text-center mb-8 leading-relaxed">
+              This action is irreversible. Your profile, settings, and conversation history will be permanently deleted. Do you understand and wish to proceed?
+            </p>
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setShowClearConfirm(false)}
+                className="flex-1 py-3 rounded-xl bg-surface-container-low text-on-surface font-bold hover:bg-surface-container-low/80 transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleClearData}
+                className="flex-1 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
+              >
+                Clear Everything
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hero Orb Indication */}
       <div className="flex items-center gap-8 mb-16 mt-8">
         <div className="relative">
@@ -81,7 +126,7 @@ export const SettingsView: React.FC = () => {
           <h3 className="text-4xl font-black font-headline tracking-tighter mb-2">
             {displayName ? `Hi, ${displayName.split(' ')[0]}` : 'Tune your Experience'}
           </h3>
-          <p className="text-on-surface-variant max-w-md font-body leading-relaxed">Adjust how Hay Kai listens, speaks, and appears in your digital workspace.</p>
+          <p className="text-on-surface-variant max-w-md font-body leading-relaxed">Adjust how Hushh Kai listens, speaks, and appears in your digital workspace.</p>
         </div>
       </div>
 
@@ -133,12 +178,7 @@ export const SettingsView: React.FC = () => {
                   Export JSON
                 </button>
                 <button 
-                  onClick={() => {
-                    if (confirm('Are you sure you want to clear all local data? This will reset your profile.')) {
-                      localStorage.clear();
-                      window.location.reload();
-                    }
-                  }}
+                  onClick={() => setShowClearConfirm(true)}
                   className="px-4 py-2 rounded-lg bg-red-500/10 text-red-400 text-xs font-bold hover:bg-red-500/20 transition-all"
                 >
                   Clear All Data
@@ -254,6 +294,48 @@ export const SettingsView: React.FC = () => {
             </div>
           </div>
         </section>
+        
+        {/* Investment Lens & Agentic Alignment */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-primary">psychology</span>
+              <h4 className="text-lg font-bold font-headline">Investment Lens & Alignment</h4>
+            </div>
+          </div>
+          <div className="bg-surface-container-low p-6 rounded-xl space-y-6 border border-outline-variant/10">
+            <p className="text-xs text-on-surface-variant leading-relaxed mb-4">
+              Select an "Investment Lens" to align Hay Kai's reasoning and data fetching strategies with your personal goals.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { id: 'Growth', label: 'Growth', desc: 'Prioritizes monetization & velocity', icon: 'trending_up' },
+                { id: 'Balanced', label: 'Balanced', desc: 'Optimized risk/reward ratio', icon: 'balance' },
+                { id: 'Defensive', label: 'Defensive', desc: 'Audit-first & strict privacy', icon: 'security' },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setLens(item.id as any)}
+                  className={cn(
+                    "p-4 rounded-xl border text-left transition-all group",
+                    lens === item.id 
+                      ? "bg-primary/10 border-primary shadow-[0_0_20px_rgba(var(--primary-rgb),0.1)]" 
+                      : "bg-surface-container-highest/30 border-outline-variant/10 hover:border-primary/30"
+                  )}
+                >
+                  <span className={cn(
+                    "material-symbols-outlined mb-2 block",
+                    lens === item.id ? "text-primary" : "text-on-surface-variant group-hover:text-primary"
+                  )}>
+                    {item.icon}
+                  </span>
+                  <p className={cn("text-sm font-bold mb-1", lens === item.id ? "text-primary" : "text-white")}>{item.label}</p>
+                  <p className="text-[10px] text-on-surface-variant leading-tight">{item.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
 
         {/* Privacy & Permissions */}
         <section>
@@ -264,6 +346,50 @@ export const SettingsView: React.FC = () => {
             </div>
           </div>
           <div className="bg-surface-container-low p-2 rounded-xl border border-outline-variant/10">
+            <div className="p-4 flex items-center justify-between border-b border-outline-variant/10">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center">
+                  <span className="material-symbols-outlined text-on-surface-variant">face_unlock</span>
+                </div>
+                <div>
+                  <p className="font-medium">Face Lock Security</p>
+                  <p className="text-xs text-on-surface-variant">Use your camera to unlock Hushh Kai automatically.</p>
+                </div>
+              </div>
+              <Tooltip content="Toggle face lock" position="left">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only peer" 
+                    checked={faceLockEnabled}
+                    onChange={(e) => setFaceLockEnabled(e.target.checked)}
+                  />
+                  <div className="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full peer-checked:after:bg-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-on-surface-variant after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </label>
+              </Tooltip>
+            </div>
+            <div className="p-4 flex items-center justify-between border-b border-outline-variant/10">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center">
+                  <span className="material-symbols-outlined text-on-surface-variant">key</span>
+                </div>
+                <div>
+                  <p className="font-medium">Client-Side BYOK</p>
+                  <p className="text-xs text-on-surface-variant">Use hardware-backed encryption keys (Bring Your Own Key).</p>
+                </div>
+              </div>
+              <Tooltip content="Toggle BYOK security" position="left">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only peer" 
+                    checked={byokEnabled}
+                    onChange={(e) => setByokEnabled(e.target.checked)}
+                  />
+                  <div className="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full peer-checked:after:bg-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-on-surface-variant after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+                </label>
+              </Tooltip>
+            </div>
             <div className="p-4 flex items-center justify-between border-b border-outline-variant/10">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center">
@@ -311,8 +437,16 @@ export const SettingsView: React.FC = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Tooltip content="Dark mode (OLED optimized)" position="top" className="w-full">
-              <div className="bg-surface-container-highest/60 border border-primary/40 p-4 rounded-xl flex items-center gap-4 w-full">
-                <div className="w-12 h-12 rounded-lg bg-background flex items-center justify-center border border-outline-variant/30 overflow-hidden relative">
+              <div 
+                onClick={() => setTheme('dark')}
+                className={cn(
+                  "p-4 rounded-xl flex items-center gap-4 w-full cursor-pointer transition-all border",
+                  theme === 'dark' 
+                    ? "bg-surface-container-highest/60 border-primary shadow-[0_0_20px_rgba(var(--primary-rgb),0.2)]" 
+                    : "bg-surface-container-low border-outline-variant/10 hover:bg-surface-container-highest"
+                )}
+              >
+                <div className="w-12 h-12 rounded-lg bg-black flex items-center justify-center border border-outline-variant/30 overflow-hidden relative">
                   <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-primary to-secondary"></div>
                   <span className="material-symbols-outlined text-white">dark_mode</span>
                 </div>
@@ -320,11 +454,19 @@ export const SettingsView: React.FC = () => {
                   <p className="font-semibold text-sm">Dark Mode</p>
                   <p className="text-xs text-on-surface-variant">Recommended for OLED</p>
                 </div>
-                <span className="material-symbols-outlined text-primary fill">check_circle</span>
+                {theme === 'dark' && <span className="material-symbols-outlined text-primary fill">check_circle</span>}
               </div>
             </Tooltip>
             <Tooltip content="Light mode (High contrast)" position="top" className="w-full">
-              <div className="bg-surface-container-low p-4 rounded-xl flex items-center gap-4 hover:bg-surface-container-highest transition-colors cursor-pointer group border border-outline-variant/10 w-full">
+              <div 
+                onClick={() => setTheme('light')}
+                className={cn(
+                  "p-4 rounded-xl flex items-center gap-4 w-full cursor-pointer transition-all border",
+                  theme === 'light' 
+                    ? "bg-surface-container-highest/60 border-primary shadow-[0_0_20px_rgba(var(--primary-rgb),0.2)]" 
+                    : "bg-surface-container-low border-outline-variant/10 hover:bg-surface-container-highest"
+                )}
+              >
                 <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center border border-outline-variant/10 overflow-hidden">
                   <span className="material-symbols-outlined text-black">light_mode</span>
                 </div>
@@ -332,7 +474,7 @@ export const SettingsView: React.FC = () => {
                   <p className="font-semibold text-sm">Light Mode</p>
                   <p className="text-xs text-on-surface-variant">High contrast clarity</p>
                 </div>
-                <div className="w-5 h-5 rounded-full border-2 border-outline-variant group-hover:border-primary transition-colors"></div>
+                {theme === 'light' && <span className="material-symbols-outlined text-primary fill">check_circle</span>}
               </div>
             </Tooltip>
           </div>
@@ -340,6 +482,15 @@ export const SettingsView: React.FC = () => {
 
         {/* Save Actions */}
         <div className="flex items-center justify-end gap-4 pt-8 border-t border-outline-variant/10">
+          <Tooltip content="Lock the application immediately" position="top">
+            <button 
+              onClick={() => setIsLocked(true)}
+              className="px-6 py-2.5 rounded-full text-on-surface-variant hover:bg-surface-container-highest transition-colors font-semibold text-sm flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-lg">lock</span>
+              Lock Now
+            </button>
+          </Tooltip>
           <Tooltip content="Revert to factory settings" position="top">
             <button className="px-6 py-2.5 rounded-full text-on-surface-variant hover:bg-surface-container-highest transition-colors font-semibold text-sm">
               Reset to Default

@@ -110,7 +110,7 @@ export const VoiceAssistant: React.FC = () => {
                     animate={{ opacity: 1, x: 0 }}
                     className="text-left"
                   >
-                    <p className="text-xs text-primary mb-1">Kai</p>
+                    <p className="text-xs text-primary mb-1">Hushh Kai</p>
                     <p className="text-sm text-gray-300 leading-relaxed bg-primary/5 inline-block px-3 py-2 rounded-2xl rounded-tl-none border border-primary/10">
                       {assistantTranscript}
                     </p>

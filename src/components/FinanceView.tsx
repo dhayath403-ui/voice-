@@ -89,6 +89,42 @@ export const FinanceView: React.FC = () => {
     fetchHushhPulse();
   }, []);
 
+  const [trendNotification, setTrendNotification] = useState<{ type: 'up' | 'down', message: string } | null>(null);
+
+  useEffect(() => {
+    if (hushhPulse?.performanceData && hushhPulse.performanceData.length >= 2) {
+      const data = hushhPulse.performanceData;
+      const last = data[data.length - 1].value;
+      const prev = data[data.length - 2].value;
+      
+      if (last > prev) {
+        setTrendNotification({ type: 'up', message: 'Hushh Pulse is trending upwards! Market momentum is increasing.' });
+      } else if (last < prev) {
+        setTrendNotification({ type: 'down', message: 'Hushh Pulse is showing a slight dip. Market correction in progress.' });
+      }
+      
+      const timer = setTimeout(() => setTrendNotification(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [hushhPulse]);
+
+  useEffect(() => {
+    if (result?.performanceData && result.performanceData.length >= 2) {
+      const data = result.performanceData;
+      const last = data[data.length - 1].value;
+      const prev = data[data.length - 2].value;
+      
+      if (last > prev) {
+        setTrendNotification({ type: 'up', message: `${result.company} is showing positive growth momentum.` });
+      } else if (last < prev) {
+        setTrendNotification({ type: 'down', message: `${result.company} valuation is currently cooling down.` });
+      }
+      
+      const timer = setTimeout(() => setTrendNotification(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [result]);
+
   const fetchHushhPulse = async () => {
     setIsPulseLoading(true);
     try {
@@ -131,6 +167,26 @@ export const FinanceView: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-4">
+          <AnimatePresence>
+            {trendNotification && (
+              <motion.div
+                initial={{ opacity: 0, x: 20, scale: 0.9 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 20, scale: 0.9 }}
+                className={cn(
+                  "px-4 py-2 rounded-xl border flex items-center gap-2 shadow-lg backdrop-blur-md",
+                  trendNotification.type === 'up' 
+                    ? "bg-primary/10 border-primary/30 text-primary" 
+                    : "bg-red-500/10 border-red-500/30 text-red-500"
+                )}
+              >
+                <span className="material-symbols-outlined text-sm">
+                  {trendNotification.type === 'up' ? 'trending_up' : 'trending_down'}
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">{trendNotification.message}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <div className="px-4 py-2 rounded-xl bg-surface-container-highest/50 border border-outline-variant/10 flex items-center gap-2">
             <Globe className="w-4 h-4 text-primary" />
             <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Market: Private</span>

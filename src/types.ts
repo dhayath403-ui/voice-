@@ -10,3 +10,12 @@ export interface HistoryEntry {
   tags?: string[];
   timestamp: number; // For sorting
 }
+
+export interface ScheduledTask {
+  id: string;
+  title: string;
+  dateTime: string;
+  recurring: 'none' | 'daily' | 'weekly' | 'monthly';
+  status: 'pending' | 'completed' | 'cancelled';
+  timestamp: number;
+}

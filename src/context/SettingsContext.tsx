@@ -2,22 +2,34 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type Language = 'English' | 'Hindi' | 'Telugu' | 'Malayalam' | 'Tamil' | 'Bengali';
 export type VoicePersonality = 'Kai' | 'Nova' | 'Echo' | 'Lyra';
+export type InvestmentLens = 'Growth' | 'Balanced' | 'Defensive';
+export type Theme = 'light' | 'dark';
 
 interface SettingsContextType {
   language: Language;
   userLanguage: Language;
   voice: VoicePersonality;
+  lens: InvestmentLens;
+  theme: Theme;
+  byokEnabled: boolean;
   voiceTrigger: boolean;
   profilePicture: string | null;
   displayName: string;
   email: string;
+  faceLockEnabled: boolean;
+  isLocked: boolean;
   setLanguage: (lang: Language) => void;
   setUserLanguage: (lang: Language) => void;
   setVoice: (voice: VoicePersonality) => void;
+  setLens: (lens: InvestmentLens) => void;
+  setTheme: (theme: Theme) => void;
+  setByokEnabled: (enabled: boolean) => void;
   setVoiceTrigger: (enabled: boolean) => void;
   setProfilePicture: (pic: string | null) => void;
   setDisplayName: (name: string) => void;
   setEmail: (email: string) => void;
+  setFaceLockEnabled: (enabled: boolean) => void;
+  setIsLocked: (locked: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -38,6 +50,21 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return (saved as VoicePersonality) || 'Nova';
   });
 
+  const [lens, setLens] = useState<InvestmentLens>(() => {
+    const saved = localStorage.getItem('hay-kai-lens');
+    return (saved as InvestmentLens) || 'Balanced';
+  });
+
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem('hay-kai-theme');
+    return (saved as Theme) || 'dark';
+  });
+
+  const [byokEnabled, setByokEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem('hay-kai-byok-enabled');
+    return saved === 'true';
+  });
+
   const [voiceTrigger, setVoiceTrigger] = useState<boolean>(() => {
     const saved = localStorage.getItem('hay-kai-voice-trigger');
     return saved === null ? true : saved === 'true';
@@ -48,12 +75,19 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
 
   const [displayName, setDisplayName] = useState<string>(() => {
-    return localStorage.getItem('hay-kai-display-name') || 'Hay Kai User';
+    return localStorage.getItem('hay-kai-display-name') || 'Hushh Kai User';
   });
 
   const [email, setEmail] = useState<string>(() => {
     return localStorage.getItem('hay-kai-email') || 'dhayath403@gmail.com';
   });
+
+  const [faceLockEnabled, setFaceLockEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem('hay-kai-face-lock');
+    return saved === 'true';
+  });
+
+  const [isLocked, setIsLocked] = useState<boolean>(false);
 
   useEffect(() => {
     localStorage.setItem('hay-kai-language', language);
@@ -66,6 +100,20 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     localStorage.setItem('hay-kai-voice', voice);
   }, [voice]);
+
+  useEffect(() => {
+    localStorage.setItem('hay-kai-lens', lens);
+  }, [lens]);
+
+  useEffect(() => {
+    localStorage.setItem('hay-kai-theme', theme);
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(theme);
+  }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('hay-kai-byok-enabled', String(byokEnabled));
+  }, [byokEnabled]);
 
   useEffect(() => {
     localStorage.setItem('hay-kai-voice-trigger', String(voiceTrigger));
@@ -87,22 +135,36 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem('hay-kai-email', email);
   }, [email]);
 
+  useEffect(() => {
+    localStorage.setItem('hay-kai-face-lock', String(faceLockEnabled));
+  }, [faceLockEnabled]);
+
   return (
     <SettingsContext.Provider value={{ 
       language, 
       userLanguage,
       voice, 
+      lens,
+      theme,
+      byokEnabled,
       voiceTrigger, 
       profilePicture,
       displayName,
       email,
+      faceLockEnabled,
+      isLocked,
       setLanguage, 
       setUserLanguage,
       setVoice, 
+      setLens,
+      setTheme,
+      setByokEnabled,
       setVoiceTrigger,
       setProfilePicture,
       setDisplayName,
-      setEmail
+      setEmail,
+      setFaceLockEnabled,
+      setIsLocked
     }}>
       {children}
     </SettingsContext.Provider>
