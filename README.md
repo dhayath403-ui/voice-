@@ -26,7 +26,17 @@ A bespoke profile management system that ensures the user's presence is visually
     *   **Neural Icon Transition**: Allows switching between custom photos and Kai's rhythmic audio signatures.
     *   **Persistence**: Stored as Base64 in local settings for instant, offline loading.
 
-### 3. Voice Intelligence & Multi-modal Agent
+### 3. Identity Wallet & vCard System
+A unified interface for digital identity manifestation and financial sovereignty.
+- **vCard System**: A flippable, high-fidelity digital business card.
+    *   **Front**: Displays verified identity, role, and the signature "Hero Orb".
+    *   **Back**: Neural manifestation reveal with a secure QR code for peer-to-peer data sharing.
+- **Wallet Infrastructure**:
+    *   **Live Dividends**: Real-time tracking of data earnings ($142.50 base).
+    *   **Neural Transactions**: Encrypted log of all data-mining dividends and secure tunnel provisioning fees.
+    *   **Yield Optimization**: One-touch asset withdrawal and compounding growth triggers.
+
+### 4. Voice Intelligence & Multi-modal Agent
 Kai is powered by **Gemini 1.5 Pro**, supporting complex reasoning across multiple domains.
 - **Capabilities**:
     *   **Multi-lingual**: Full support for English, Hindi, Telugu, Tamil, and Bengali.
@@ -34,7 +44,7 @@ Kai is powered by **Gemini 1.5 Pro**, supporting complex reasoning across multip
     *   **Tools**: Native hooks for Google Maps visualization, task scheduling, and "Investment Lens" alignment.
     *   **Live Session**: Real-time voice interaction with visual feedback and conversation summarization.
 
-### 4. Data Sovereignty Dashboard
+### 5. Data Sovereignty Dashboard
 A comprehensive overview of the user's digital footprint.
 - **Stats**: Real-time tracking of Data Assets (GB), Security Posture, and Data Earnings ($).
 - **Activity Feed**: Encrypted logs of synced data sources (LinkedIn, Amazon, Spotify).
@@ -80,6 +90,7 @@ The application follows a **"Breathing Space"** philosophy (`space-y-20` in sett
 src/
 ├── components/
 │   ├── FaceLockScreen.tsx        # High-security biometric gateway (TensorFlow.js)
+│   ├── VCardWallet.tsx           # Digital business card & Financial wallet integration
 │   ├── ProfilePictureUpload.tsx  # Avatar manifestation with round-crop logic
 │   ├── AssistantPanel.tsx        # Main AI chat & Multimodal tool center
 │   ├── SettingsView.tsx          # Global configuration HUD (80px section spacing)
