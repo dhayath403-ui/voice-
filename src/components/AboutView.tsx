@@ -114,6 +114,31 @@ export const AboutView: React.FC = () => {
           </div>
         </section>
 
+        <section className="bg-surface-container-low p-8 rounded-3xl border border-outline-variant/10 space-y-6">
+          <h4 className="text-2xl font-bold font-headline text-white flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">terminal</span>
+            Technical Specification
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-4 rounded-xl bg-black/20 border border-outline-variant/10">
+              <p className="text-[10px] uppercase tracking-widest text-primary font-bold mb-2">Core Engine</p>
+              <p className="text-sm text-gray-300">Gemini 3.1 & 2.5 Flash models for ultra-low latency reasoning and multimodal synthesis.</p>
+            </div>
+            <div className="p-4 rounded-xl bg-black/20 border border-outline-variant/10">
+              <p className="text-[10px] uppercase tracking-widest text-secondary font-bold mb-2">Voice Architecture</p>
+              <p className="text-sm text-gray-300">Custom WebRTC-based Live Assistant utilizing full-duplex audio streams and transcribers.</p>
+            </div>
+            <div className="p-4 rounded-xl bg-black/20 border border-outline-variant/10">
+              <p className="text-[10px] uppercase tracking-widest text-primary font-bold mb-2">Design System</p>
+              <p className="text-sm text-gray-300">Advanced Mica/Glassmorphism implemented via Tailwind CSS & Motion for staggered reactivity.</p>
+            </div>
+            <div className="p-4 rounded-xl bg-black/20 border border-outline-variant/10">
+              <p className="text-[10px] uppercase tracking-widest text-secondary font-bold mb-2">Financial Intel</p>
+              <p className="text-sm text-gray-300">Real-time sentiment synthesis engine with interactive data visualization using Recharts.</p>
+            </div>
+          </div>
+        </section>
+
         <footer className="pt-8 text-center">
           <p className="text-[10px] uppercase tracking-[0.4em] text-on-surface-variant/40 font-bold">Version 2.4.0 • Luthier Core</p>
         </footer>

@@ -16,6 +16,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
     { id: 'settings', label: 'Settings', icon: 'settings', tooltip: 'App Configuration' },
     { id: 'finance', label: 'Finance', icon: 'trending_up', tooltip: 'Hushh Financial Intelligence' },
     { id: 'alpha-aloha', label: 'Alpha Aloha', icon: 'auto_awesome', tooltip: 'Evergreen Alpha Aloha Fund A' },
+    { id: 'contribute', label: 'Contribute', icon: 'groups', tooltip: 'Join the Hushh Ecosystem' },
     { id: 'about', label: 'About', icon: 'info', tooltip: 'About Hushh Kai' },
   ];
 

@@ -12,6 +12,7 @@ import { SettingsView } from './components/SettingsView';
 import { AboutView } from './components/AboutView';
 import { FinanceView } from './components/FinanceView';
 import { AlphaAlohaView } from './components/AlphaAlohaView';
+import { ContributeView } from './components/ContributeView';
 import { AssistantPill } from './components/AssistantPill';
 import { AssistantPanel } from './components/AssistantPanel';
 import { FaceLockScreen } from './components/FaceLockScreen';
@@ -20,12 +21,17 @@ import { AnimatePresence, motion } from 'motion/react';
 import { cn } from './lib/utils';
 
 import { SettingsProvider, useSettings } from './context/SettingsContext';
+import { ErrorProvider } from './context/ErrorContext';
+import { ErrorToast } from './components/ErrorToast';
 
 export default function App() {
   return (
-    <SettingsProvider>
-      <AppContent />
-    </SettingsProvider>
+    <ErrorProvider>
+      <SettingsProvider>
+        <AppContent />
+        <ErrorToast />
+      </SettingsProvider>
+    </ErrorProvider>
   );
 }
 
@@ -56,6 +62,8 @@ function AppContent() {
         return <FinanceView />;
       case 'alpha-aloha':
         return <AlphaAlohaView />;
+      case 'contribute':
+        return <ContributeView />;
       default:
         return <Dashboard />;
     }
@@ -96,6 +104,7 @@ function AppContent() {
           {[
             { id: 'assistant', label: 'Hushh Kai', icon: 'dashboard' },
             { id: 'finance', label: 'Finance', icon: 'trending_up' },
+            { id: 'contribute', label: 'Contribute', icon: 'groups' },
             { id: 'history', label: 'History', icon: 'history' },
             { id: 'settings', label: 'Settings', icon: 'settings' },
           ].map((item) => (

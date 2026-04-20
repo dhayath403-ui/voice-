@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { generateAssistantResponse, generateImage, generateAudioResponse, generateAssistantResponseStream, generateAudioResponseStream, generateTTS } from '../services/geminiService';
 import { useLiveAssistant } from '../hooks/useLiveAssistant';
 import { useSettings } from '../context/SettingsContext';
+import { useError } from '../context/ErrorContext';
 import { PromptGuide } from './PromptGuide';
 import { AudioPlayer } from './AudioPlayer';
 import { MapVisualization } from './MapVisualization';
@@ -85,6 +86,7 @@ interface AssistantPanelProps {
 
 export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
   const { language, userLanguage, voice, lens, byokEnabled } = useSettings();
+  const { showError } = useError();
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
   const [messages, setMessages] = useState<Message[]>([
@@ -257,7 +259,8 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
     transcript: liveTranscript,
     assistantTranscript: liveAssistantTranscript,
     volume: liveVolume,
-    connectionQuality: liveConnectionQuality
+    connectionQuality: liveConnectionQuality,
+    error: liveError
   } = useLiveAssistant({
     onUserMessage: (text) => {
       // Add user message to thread
@@ -306,6 +309,12 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
       });
     }
   });
+
+  useEffect(() => {
+    if (liveError) {
+      showError(liveError);
+    }
+  }, [liveError, showError]);
 
   useEffect(() => {
     if (wasLiveActive.current && !isLiveActive && liveSessionMessageIds.current.length > 0) {
@@ -992,26 +1001,60 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
 
       {isLiveActive && (
         <div className="px-6 py-3 bg-secondary/5 border-b border-secondary/10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex gap-0.5 items-center h-4">
-              {[...Array(8)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  animate={{ 
-                    height: isLiveActive ? `${Math.max(4, (liveVolume * (1 - Math.abs(i - 3.5) / 4)))}px` : '4px' 
-                  }}
-                  className="w-1 bg-secondary rounded-full"
-                />
-              ))}
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1 items-end h-6">
+                {[...Array(7)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    animate={{ 
+                      height: isLiveActive ? `${Math.max(4, (liveVolume * (1 - Math.abs(i - 3) / 4)))}px` : '4px',
+                      backgroundColor: liveVolume > 50 ? '#ff8a65' : '#82b1ff'
+                    }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className="w-1 rounded-full bg-secondary"
+                  />
+                ))}
+              </div>
+              <span className="text-[10px] font-bold text-secondary uppercase tracking-widest min-w-[70px]">
+                {liveVolume > 5 ? 'Speaking' : 'Listening...'}
+              </span>
             </div>
-            <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">Listening...</span>
+            <div className="flex items-center gap-3 border-l border-outline-variant/10 pl-4">
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
+                <span className="material-symbols-outlined text-[12px] text-primary fill">shield</span>
+                <span className="text-[8px] font-bold text-primary uppercase tracking-widest">Vault Authorized</span>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-[8px] text-on-surface-variant/60 uppercase font-black tracking-tighter">Connection</span>
+                <span className={cn(
+                  "text-[10px] font-bold uppercase",
+                  liveConnectionQuality > 90 ? "text-green-500" : liveConnectionQuality > 70 ? "text-yellow-500" : "text-red-500"
+                )}>
+                  {liveConnectionQuality > 90 ? 'Excellent' : liveConnectionQuality > 70 ? 'Stable' : 'Poor'}
+                </span>
+              </div>
+              <div className="flex gap-0.5 items-end h-3">
+                {[...Array(4)].map((_, i) => (
+                  <div 
+                    key={i} 
+                    className={cn(
+                      "w-1 rounded-full",
+                      i < (liveConnectionQuality / 25) ? (liveConnectionQuality > 70 ? "bg-green-500" : "bg-yellow-500") : "bg-white/10"
+                    )}
+                    style={{ height: `${(i + 1) * 25}%` }}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] text-on-surface-variant/60 uppercase font-medium">Accuracy</span>
+          <div className="hidden md:flex items-center gap-2">
+            <span className="text-[9px] text-on-surface-variant/60 uppercase font-medium">Processing High Fidelity</span>
             <div className="w-16 h-1 bg-surface-container-highest rounded-full overflow-hidden">
               <motion.div 
                 initial={{ width: 0 }}
-                animate={{ width: '94%' }}
+                animate={{ width: '100%' }}
+                transition={{ duration: 0.5 }}
                 className="h-full bg-secondary"
               />
             </div>
@@ -1040,31 +1083,49 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
                   className="absolute w-64 h-64 rounded-full bg-secondary blur-3xl"
                 />
                 <div className="relative w-48 h-48 rounded-full border-2 border-secondary/20 flex items-center justify-center">
+                  {isLiveConnecting && (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                      className="absolute inset-[-8px] rounded-full border-2 border-dashed border-secondary/40"
+                    />
+                  )}
                   <div className="absolute inset-0 rounded-full border border-secondary/10 animate-ping" />
                   <div className={cn(
-                    "w-32 h-32 rounded-full bg-gradient-to-br from-secondary/40 to-primary/40 flex items-center justify-center shadow-2xl transition-all duration-500",
+                    "w-32 h-32 rounded-full bg-gradient-to-br from-secondary/40 to-primary/40 flex items-center justify-center shadow-2xl transition-all duration-500 overflow-hidden relative",
                     isLiveActive ? "scale-110 rotate-12" : "grayscale opacity-50"
                   )}>
+                    {isLiveActive && (
+                      <motion.div
+                        animate={{
+                          y: [0, -20, 0],
+                          x: [0, 10, 0]
+                        }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                        className="absolute inset-0 bg-white/10 blur-xl"
+                      />
+                    )}
                     <span className={cn(
-                      "material-symbols-outlined text-5xl transition-all",
+                      "material-symbols-outlined text-5xl transition-all relative z-10",
                       isLiveActive ? "text-white fill" : "text-on-surface-variant"
                     )}>
-                      {isLiveActive ? 'mic' : 'mic_off'}
+                      {isLiveConnecting ? 'sync' : isLiveActive ? 'mic' : 'mic_off'}
                     </span>
                   </div>
                   
                   {/* Audio Visualizer Rings */}
-                  {[...Array(3)].map((_, i) => (
+                  {[...Array(4)].map((_, i) => (
                     <motion.div
                       key={i}
                       animate={{
-                        scale: isLiveActive ? [1, 1.5 + i * 0.2, 1] : 1,
-                        opacity: isLiveActive ? [0.5, 0, 0.5] : 0,
+                        scale: isLiveActive ? [1, 1.2 + (liveVolume / 20) + i * 0.2, 1] : 1,
+                        opacity: isLiveActive ? [0.4, 0, 0.4] : 0,
+                        borderWidth: isLiveActive ? ['1px', '3px', '1px'] : '1px'
                       }}
                       transition={{
                         duration: 1.5,
                         repeat: Infinity,
-                        delay: i * 0.4,
+                        delay: i * 0.3,
                       }}
                       className="absolute inset-0 rounded-full border border-secondary/30"
                     />
@@ -1094,9 +1155,16 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
                 {!isLiveActive && (
                   <button
                     onClick={toggleLive}
-                    className="px-8 py-3 rounded-full bg-secondary text-black font-bold text-sm shadow-xl hover:scale-105 active:scale-95 transition-all"
+                    disabled={isLiveConnecting}
+                    className={cn(
+                      "px-8 py-3 rounded-full font-bold text-sm shadow-xl transition-all flex items-center gap-2 mx-auto",
+                      isLiveConnecting 
+                        ? "bg-surface-container-highest text-on-surface-variant/50 cursor-wait" 
+                        : "bg-secondary text-black hover:scale-105 active:scale-95"
+                    )}
                   >
-                    Start Voice Command
+                    {isLiveConnecting && <span className="material-symbols-outlined text-sm animate-spin">sync</span>}
+                    {isLiveConnecting ? "Tuning Connection..." : "Start Voice Command"}
                   </button>
                 )}
               </div>
@@ -1136,31 +1204,35 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
           )}
           {showSavePrompt && (
             <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="absolute inset-x-6 top-6 z-50 bg-surface-container-highest/95 backdrop-blur-xl p-6 rounded-2xl border border-primary/30 shadow-2xl"
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              className="absolute inset-x-4 top-4 z-50 bg-surface-container-highest/95 backdrop-blur-2xl p-5 rounded-3xl border border-primary/20 shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
             >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-primary">save</span>
+              <div className="flex items-start gap-4 mb-5">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
+                  <span className="material-symbols-outlined text-primary scale-125">history_edu</span>
                 </div>
-                <div>
-                  <h4 className="font-headline font-bold text-on-background">Save Conversation?</h4>
-                  <p className="text-xs text-on-surface-variant">Would you like to keep this voice session in your chat history?</p>
+                <div className="flex-1">
+                  <h4 className="font-headline font-bold text-on-background text-base">Session Concluded</h4>
+                  <p className="text-xs text-on-surface-variant leading-relaxed mt-1">
+                    Would you like to preserve this voice conversation in your permanent activity log?
+                  </p>
                 </div>
               </div>
               <div className="flex gap-3">
                 <button 
                   onClick={() => handleSaveHistory(true)}
-                  className="flex-1 py-2 rounded-xl bg-primary text-black font-bold text-sm hover:bg-primary/90 transition-colors"
+                  className="flex-1 py-3 rounded-2xl bg-primary text-black font-bold text-sm hover:bg-primary/90 transition-all active:scale-95 flex items-center justify-center gap-2 group"
                 >
+                  <span className="material-symbols-outlined text-sm group-hover:animate-bounce">save</span>
                   Save to Log
                 </button>
                 <button 
                   onClick={() => handleSaveHistory(false)}
-                  className="flex-1 py-2 rounded-xl bg-surface-container-low text-on-surface-variant font-bold text-sm hover:bg-surface-container-low/80 transition-colors border border-outline-variant/20"
+                  className="px-6 py-3 rounded-2xl bg-surface-container-low text-on-surface-variant font-bold text-sm hover:bg-surface-container-low/80 transition-all active:scale-95 border border-outline-variant/20 flex items-center justify-center gap-2"
                 >
+                  <span className="material-symbols-outlined text-sm">delete_sweep</span>
                   Discard
                 </button>
               </div>
@@ -1207,30 +1279,43 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({ onClose }) => {
                 ? "bg-surface-container-highest text-on-surface rounded-tr-none" 
                 : "bg-surface-container/60 text-on-background rounded-tl-none border border-outline-variant/10"
             )}>
-              {msg.audioUrl ? (
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2 text-xs text-on-surface-variant font-medium">
-                    <span className="material-symbols-outlined text-sm">mic</span>
-                    Audio Message
+              <div className="flex flex-col gap-3">
+                {msg.content && (
+                  <div className="space-y-2">
+                    {msg.content.split('---').map((part, i) => (
+                      <div key={i} className={cn(
+                        i > 0 && "mt-2 pt-2 border-t border-outline-variant/20 text-on-surface-variant italic text-xs",
+                        "whitespace-pre-wrap"
+                      )}>
+                        {part.trim()}
+                      </div>
+                    ))}
                   </div>
-                  <AudioPlayer src={msg.audioUrl} className="bg-surface-container-highest/20 border-none p-2" />
-                </div>
-              ) : msg.content ? (
-                <>
-                  {msg.content.split('---').map((part, i) => (
-                    <div key={i} className={cn(i > 0 && "mt-2 pt-2 border-t border-outline-variant/20 text-on-surface-variant italic text-xs")}>
-                      {part.trim()}
+                )}
+
+                {msg.audioUrl && (
+                  <div className={cn(
+                    "flex flex-col gap-2 min-w-[200px]",
+                    msg.content && "mt-2 pt-2 border-t border-outline-variant/10"
+                  )}>
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.2em]">
+                      <span className="material-symbols-outlined text-sm">mic</span>
+                      {msg.role === 'user' ? 'Voice Query' : 'Voice Response'}
                     </div>
-                  ))}
-                  {isLoading && messages[messages.length - 1].id === msg.id && (
-                    <div className="mt-4 pt-4 border-t border-outline-variant/10">
-                      <SkeletonLoader />
-                    </div>
-                  )}
-                </>
-              ) : (
-                <SkeletonLoader />
-              )}
+                    <AudioPlayer src={msg.audioUrl} className="bg-black/20 border-none p-2" />
+                  </div>
+                )}
+
+                {!msg.content && !msg.audioUrl && !msg.imageUrl && !msg.mapData && !msg.error && (
+                  <SkeletonLoader />
+                )}
+
+                {isLoading && messages[messages.length - 1].id === msg.id && msg.role === 'assistant' && !msg.content && (
+                  <div className="mt-1">
+                    <SkeletonLoader />
+                  </div>
+                )}
+              </div>
               
               {msg.error && (
                 <div className="mt-2 flex items-center gap-2 text-[10px] font-bold text-red-400/80 uppercase tracking-wider bg-red-400/5 px-2 py-1 rounded border border-red-400/10">

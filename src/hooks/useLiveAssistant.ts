@@ -45,6 +45,8 @@ export const useLiveAssistant = (callbacks?: LiveAssistantCallbacks) => {
   const [transcript, setTranscript] = useState("");
   const [assistantTranscript, setAssistantTranscript] = useState("");
   const [volume, setVolume] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [connectionQuality, setConnectionQuality] = useState<number>(98); // 0-100
   
   useEffect(() => {
@@ -142,6 +144,7 @@ export const useLiveAssistant = (callbacks?: LiveAssistantCallbacks) => {
     
     console.log("Starting voice session...");
     setIsConnecting(true);
+    setError(null);
     setTranscript("");
     setAssistantTranscript("");
     
@@ -204,6 +207,11 @@ export const useLiveAssistant = (callbacks?: LiveAssistantCallbacks) => {
           - Performance: $100M projected to $14.6B over 25 years using all three engines.
           
           If the user says 'Hushh Kai', respond with 'I'm here'.
+          
+          Hushh Contribution Program:
+          - Project Tracks: 1. hushhTech (Frontend/API/Testing) and 2. Kai (AI Flow/Architecture).
+          - Repos: hushhTech (https://github.com/hushh-labs/hushh_Tech_website) and Kai (https://github.com/hushh-labs/hushh-research).
+          - Deadline for PR: 26 April 2026.
           
           IMPORTANT: You must respond in ${language}. If the user speaks to you in a different language, you should still respond in ${language} unless they explicitly ask you to switch.
           
@@ -271,6 +279,7 @@ export const useLiveAssistant = (callbacks?: LiveAssistantCallbacks) => {
             
             // Handle tool calls
             if (message.toolCall) {
+              setIsProcessing(true);
               const { functionCalls } = message.toolCall;
               if (functionCalls) {
                 for (const call of functionCalls) {
@@ -298,6 +307,7 @@ export const useLiveAssistant = (callbacks?: LiveAssistantCallbacks) => {
 
             // Handle audio output
             if (message.serverContent?.modelTurn?.parts) {
+              setIsProcessing(false);
               for (const part of message.serverContent.modelTurn.parts) {
                 if (part.inlineData?.data) {
                   const binaryString = atob(part.inlineData.data);
@@ -321,6 +331,7 @@ export const useLiveAssistant = (callbacks?: LiveAssistantCallbacks) => {
 
             // Handle transcriptions
             if (message.serverContent?.userContent?.parts?.[0]?.text) {
+              setIsProcessing(true);
               const text = message.serverContent.userContent.parts[0].text;
               setTranscript(text);
               onUserMessageRef.current?.(text);
@@ -338,6 +349,7 @@ export const useLiveAssistant = (callbacks?: LiveAssistantCallbacks) => {
             }
 
             if (message.inputAudioTranscription?.text) {
+              setIsProcessing(true);
               const text = message.inputAudioTranscription.text;
               setTranscript(text);
               onUserMessageRef.current?.(text);
@@ -361,8 +373,13 @@ export const useLiveAssistant = (callbacks?: LiveAssistantCallbacks) => {
       });
       
       sessionRef.current = await sessionPromise;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to start voice session:", error);
+      const errorMessage = error.name === 'NotAllowedError' || error.message?.includes('Permission denied')
+        ? "Microphone access denied. Please enable microphone permissions in your browser settings."
+        : `Failed to start voice session: ${error.message || 'Unknown error'}`;
+      
+      setError(errorMessage);
       setIsConnecting(false);
       setIsActive(false);
       stopSession();
@@ -376,7 +393,9 @@ export const useLiveAssistant = (callbacks?: LiveAssistantCallbacks) => {
     stopSession,
     transcript,
     assistantTranscript,
+    isProcessing,
     volume,
-    connectionQuality
+    connectionQuality,
+    error
   };
 };

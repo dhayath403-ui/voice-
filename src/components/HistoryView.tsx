@@ -189,17 +189,25 @@ export const HistoryView: React.FC = () => {
               </button>
             </Tooltip>
 
-            <Tooltip content={`Sort by ${sortBy === 'newest' ? 'oldest' : 'newest'} first`} position="bottom">
-              <button 
-                className="flex items-center gap-2 px-4 py-2 bg-surface-container-highest rounded-xl text-sm font-medium hover:bg-surface-container-highest/80 transition-colors"
-                onClick={() => setSortBy(prev => prev === 'newest' ? 'oldest' : 'newest')}
-              >
-                <span className="material-symbols-outlined text-lg">
-                  {sortBy === 'newest' ? 'sort_by_alpha' : 'filter_list'}
-                </span>
-                <span className="hidden sm:inline">{sortBy === 'newest' ? 'Newest First' : 'Oldest First'}</span>
-              </button>
-            </Tooltip>
+            <div className="flex bg-surface-container-highest rounded-xl p-1 shrink-0">
+              {(['newest', 'oldest'] as const).map((order) => (
+                <button
+                  key={order}
+                  onClick={() => setSortBy(order)}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all",
+                    sortBy === order 
+                      ? "bg-surface-variant text-white shadow-sm" 
+                      : "text-on-surface-variant hover:text-white"
+                  )}
+                >
+                  <span className="material-symbols-outlined text-sm">
+                    {order === 'newest' ? 'arrow_downward' : 'arrow_upward'}
+                  </span>
+                  <span className="hidden lg:inline">{order}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

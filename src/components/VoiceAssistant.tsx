@@ -2,18 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mic, MicOff, X, Volume2, VolumeX, MessageSquare } from 'lucide-react';
 import { useLiveAssistant } from '../hooks/useLiveAssistant';
+import { useError } from '../context/ErrorContext';
 import { cn } from '../lib/utils';
 
 export const VoiceAssistant: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { showError } = useError();
   const { 
     isActive, 
     isConnecting, 
     startSession, 
     stopSession, 
     transcript, 
-    assistantTranscript 
+    assistantTranscript,
+    isProcessing,
+    volume,
+    error: liveError
   } = useLiveAssistant();
+
+  useEffect(() => {
+    if (liveError) {
+      showError(liveError);
+    }
+  }, [liveError, showError]);
 
   const toggleSession = () => {
     if (isActive) {
@@ -56,38 +67,97 @@ export const VoiceAssistant: React.FC = () => {
 
             <div className="space-y-6 min-h-[200px] flex flex-col justify-center">
               {/* Reactive Orb */}
-              <div className="flex justify-center relative py-8">
+              <div className="flex justify-center relative py-12">
+                {/* Background Glows */}
+                <AnimatePresence>
+                  {isActive && (
+                    <motion.div
+                      key="glow"
+                      initial={{ opacity: 0 }}
+                      animate={{ 
+                        opacity: isProcessing ? 0.8 : 0.4,
+                        scale: isProcessing ? 1.2 : 1 + (volume / 200)
+                      }}
+                      exit={{ opacity: 0 }}
+                      className={cn(
+                        "w-48 h-48 rounded-full blur-3xl absolute",
+                        isProcessing 
+                          ? "bg-gradient-to-r from-primary via-secondary to-primary animate-pulse" 
+                          : "bg-primary/30"
+                      )}
+                    />
+                  )}
+                </AnimatePresence>
+
+                {/* Main Orb */}
                 <motion.div
                   animate={{
-                    scale: isActive ? [1, 1.2, 1] : 1,
-                    opacity: isActive ? [0.5, 1, 0.5] : 0.5,
+                    rotate: isProcessing ? 360 : 0,
+                    scale: isActive ? (isProcessing ? 1.1 : 1 + (volume / 100)) : 1,
+                    borderColor: isProcessing ? 'var(--secondary)' : (isActive ? 'var(--primary)' : 'rgba(107, 114, 128, 0.2)'),
                   }}
                   transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                  className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/40 via-secondary/40 to-primary/40 blur-2xl absolute"
-                />
-                <motion.div
-                  animate={{
-                    rotate: isActive ? 360 : 0,
-                  }}
-                  transition={{
-                    duration: 10,
-                    repeat: Infinity,
-                    ease: "linear"
+                    rotate: { duration: isProcessing ? 2 : 10, repeat: Infinity, ease: "linear" },
+                    scale: { type: "spring", stiffness: 300, damping: 20 },
+                    borderColor: { duration: 0.3 }
                   }}
                   className={cn(
-                    "w-24 h-24 rounded-full border-2 border-dashed flex items-center justify-center transition-all duration-500",
-                    isActive ? "border-primary scale-110" : "border-gray-700"
+                    "w-32 h-32 rounded-full border-2 flex items-center justify-center relative transition-all duration-500 bg-black/40 backdrop-blur-sm",
+                    !isActive && "border-dashed"
                   )}
                 >
-                  <Mic className={cn(
-                    "w-10 h-10 transition-colors",
-                    isActive ? "text-primary" : "text-gray-600"
-                  )} />
+                  <AnimatePresence mode="wait">
+                    {isProcessing ? (
+                      <motion.div
+                        key="processing"
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.5 }}
+                        className="flex gap-1"
+                      >
+                        {[0, 1, 2].map((i) => (
+                          <motion.div
+                            key={i}
+                            animate={{ height: [8, 24, 8] }}
+                            transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.1 }}
+                            className="w-1.5 rounded-full bg-secondary"
+                          />
+                        ))}
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="mic"
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.5 }}
+                      >
+                        <Mic className={cn(
+                          "w-10 h-10 transition-colors",
+                          isActive ? "text-primary" : "text-gray-600"
+                        )} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Spinning ring for processing */}
+                  {isProcessing && (
+                    <motion.div 
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                      className="absolute -inset-1 border-2 border-t-secondary border-r-transparent border-b-transparent border-l-transparent rounded-full"
+                    />
+                  )}
                 </motion.div>
+              </div>
+
+              {/* Status Indicator */}
+              <div className="text-center">
+                <p className={cn(
+                  "text-[10px] font-bold uppercase tracking-[0.3em] h-4 transition-all",
+                  isProcessing ? "text-secondary" : (isActive ? "text-primary" : "text-gray-500")
+                )}>
+                  {isProcessing ? "Processing Data..." : (isActive ? "Listening" : "System Idle")}
+                </p>
               </div>
 
               {/* Transcripts */}

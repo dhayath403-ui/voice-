@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSettings, Language, VoicePersonality } from '../context/SettingsContext';
+import { useError } from '../context/ErrorContext';
 import { generateVoicePreview } from '../services/geminiService';
 import { Tooltip } from './Tooltip';
 import { ProfilePictureUpload } from './ProfilePictureUpload';
 import { cn } from '../lib/utils';
 
 export const SettingsView: React.FC = () => {
+  const { showError } = useError();
   const { 
     language, 
     userLanguage, 
@@ -67,6 +69,7 @@ export const SettingsView: React.FC = () => {
       };
     } catch (err) {
       console.error("Voice preview failed:", err);
+      showError("Failed to generate voice preview. Please check your connection.");
     } finally {
       setIsLoadingPreview(false);
     }
@@ -77,6 +80,22 @@ export const SettingsView: React.FC = () => {
   const handleClearData = () => {
     localStorage.clear();
     window.location.reload();
+  };
+
+  const handleFaceLockToggle = async (enabled: boolean) => {
+    if (enabled) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        // Stop the stream immediately, we only wanted to check permission
+        stream.getTracks().forEach(track => track.stop());
+        setFaceLockEnabled(true);
+      } catch (err) {
+        console.error("Camera permission denied:", err);
+        showError("Camera access is required for Face Lock security. Please enable it in your browser settings.");
+      }
+    } else {
+      setFaceLockEnabled(false);
+    }
   };
 
   return (
@@ -362,7 +381,7 @@ export const SettingsView: React.FC = () => {
                     type="checkbox" 
                     className="sr-only peer" 
                     checked={faceLockEnabled}
-                    onChange={(e) => setFaceLockEnabled(e.target.checked)}
+                    onChange={(e) => handleFaceLockToggle(e.target.checked)}
                   />
                   <div className="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full peer-checked:after:bg-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-on-surface-variant after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                 </label>
