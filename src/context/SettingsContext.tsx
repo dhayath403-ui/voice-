@@ -17,6 +17,8 @@ interface SettingsContextType {
   displayName: string;
   email: string;
   faceLockEnabled: boolean;
+  faceRegistered: boolean;
+  faceDescriptor: string | null;
   isLocked: boolean;
   setLanguage: (lang: Language) => void;
   setUserLanguage: (lang: Language) => void;
@@ -29,6 +31,8 @@ interface SettingsContextType {
   setDisplayName: (name: string) => void;
   setEmail: (email: string) => void;
   setFaceLockEnabled: (enabled: boolean) => void;
+  setFaceRegistered: (registered: boolean) => void;
+  setFaceDescriptor: (descriptor: string | null) => void;
   setIsLocked: (locked: boolean) => void;
 }
 
@@ -87,6 +91,15 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return saved === 'true';
   });
 
+  const [faceRegistered, setFaceRegistered] = useState<boolean>(() => {
+    const saved = localStorage.getItem('hay-kai-face-registered');
+    return saved === 'true';
+  });
+
+  const [faceDescriptor, setFaceDescriptor] = useState<string | null>(() => {
+    return localStorage.getItem('hay-kai-face-descriptor');
+  });
+
   const [isLocked, setIsLocked] = useState<boolean>(false);
 
   useEffect(() => {
@@ -139,6 +152,18 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem('hay-kai-face-lock', String(faceLockEnabled));
   }, [faceLockEnabled]);
 
+  useEffect(() => {
+    localStorage.setItem('hay-kai-face-registered', String(faceRegistered));
+  }, [faceRegistered]);
+
+  useEffect(() => {
+    if (faceDescriptor) {
+      localStorage.setItem('hay-kai-face-descriptor', faceDescriptor);
+    } else {
+      localStorage.removeItem('hay-kai-face-descriptor');
+    }
+  }, [faceDescriptor]);
+
   return (
     <SettingsContext.Provider value={{ 
       language, 
@@ -152,6 +177,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       displayName,
       email,
       faceLockEnabled,
+      faceRegistered,
+      faceDescriptor,
       isLocked,
       setLanguage, 
       setUserLanguage,
@@ -164,6 +191,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setDisplayName,
       setEmail,
       setFaceLockEnabled,
+      setFaceRegistered,
+      setFaceDescriptor,
       setIsLocked
     }}>
       {children}

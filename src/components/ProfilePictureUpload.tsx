@@ -79,32 +79,56 @@ export const ProfilePictureUpload: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center gap-4">
-      <div className="relative group">
-        <div className="w-16 h-16 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden border-2 border-outline-variant/20 group-hover:border-primary/50 transition-all">
+    <div className="flex flex-col md:flex-row items-center gap-8">
+      {/* Target Preview (Hero Orb Style) */}
+      <div className="relative group shrink-0">
+        <div className="w-24 h-24 rounded-full bg-secondary-container flex items-center justify-center relative z-10 shadow-[0_0_40px_rgba(var(--primary-rgb),0.2)] overflow-hidden border-2 border-primary/20">
           {profilePicture ? (
-            <img src={profilePicture} alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            <img 
+              src={profilePicture} 
+              alt="Profile" 
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+              referrerPolicy="no-referrer" 
+            />
           ) : (
-            <span className="material-symbols-outlined text-3xl text-on-surface-variant">person</span>
+            <span className="material-symbols-outlined text-4xl text-primary fill">graphic_eq</span>
           )}
+          
+          <Tooltip content="Change Profile Picture" position="top">
+            <label className="absolute inset-0 cursor-pointer flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-[2px]">
+              <div className="bg-white/10 p-2 rounded-full border border-white/20">
+                <span className="material-symbols-outlined text-white text-xl">upload</span>
+              </div>
+              <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+            </label>
+          </Tooltip>
         </div>
-        <label className="absolute inset-0 cursor-pointer flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
-          <span className="material-symbols-outlined text-white text-xl">edit</span>
-          <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-        </label>
+        <div className="absolute inset-0 w-24 h-24 rounded-full bg-primary-dim opacity-20 blur-2xl animate-pulse"></div>
       </div>
       
-      <div>
-        <p className="font-medium">Profile Identity</p>
-        <p className="text-xs text-on-surface-variant">Upload a custom avatar for your profile.</p>
-        {profilePicture && (
-          <button 
-            onClick={() => setProfilePicture(null)}
-            className="text-[10px] text-red-400 font-bold uppercase tracking-wider mt-1 hover:text-red-300 transition-colors"
-          >
-            Remove Photo
-          </button>
-        )}
+      <div className="flex-1 space-y-4">
+        <div>
+          <h5 className="font-bold text-on-surface">Avatar Manifestation</h5>
+          <p className="text-xs text-on-surface-variant leading-relaxed max-w-sm">
+            This image represents your presence within the Luthier environment. It is used in headers, security prompts, and chat signatures.
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <label className="px-4 py-2 rounded-lg bg-primary text-black font-bold text-xs cursor-pointer hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary/10">
+            Select New Image
+            <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+          </label>
+          
+          {profilePicture && (
+            <button 
+              onClick={() => setProfilePicture(null)}
+              className="px-4 py-2 rounded-lg bg-surface-container-highest text-on-surface-variant font-bold text-xs hover:text-red-400 transition-colors border border-outline-variant/10"
+            >
+              Reset to Neural Icon
+            </button>
+          )}
+        </div>
       </div>
 
       <AnimatePresence>

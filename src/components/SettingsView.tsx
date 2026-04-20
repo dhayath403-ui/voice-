@@ -17,6 +17,7 @@ export const SettingsView: React.FC = () => {
     displayName,
     email,
     faceLockEnabled,
+    faceRegistered,
     lens,
     byokEnabled,
     theme,
@@ -30,6 +31,8 @@ export const SettingsView: React.FC = () => {
     setDisplayName,
     setEmail,
     setFaceLockEnabled,
+    setFaceRegistered,
+    setFaceDescriptor,
     setIsLocked
   } = useSettings();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -149,7 +152,7 @@ export const SettingsView: React.FC = () => {
         </div>
       </div>
 
-      <div className="space-y-12">
+      <div className="space-y-20">
         {/* Profile & Account Section */}
         <section>
           <div className="flex items-center justify-between mb-4">
@@ -167,7 +170,7 @@ export const SettingsView: React.FC = () => {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Your Name"
-                  className="w-full bg-surface-container-highest border-none rounded-lg py-3 px-4 text-sm focus:ring-1 focus:ring-primary"
+                  className="w-full bg-surface-container-highest border-none rounded-lg py-3 px-4 text-sm focus:ring-1 focus:ring-primary placeholder:opacity-50"
                 />
               </div>
               <div className="space-y-2">
@@ -177,14 +180,9 @@ export const SettingsView: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
-                  className="w-full bg-surface-container-highest border-none rounded-lg py-3 px-4 text-sm focus:ring-1 focus:ring-primary"
+                  className="w-full bg-surface-container-highest border-none rounded-lg py-3 px-4 text-sm focus:ring-1 focus:ring-primary placeholder:opacity-50"
                 />
               </div>
-            </div>
-            
-            <div className="pt-4 border-t border-outline-variant/10">
-              <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant block mb-4">Profile Picture</label>
-              <ProfilePictureUpload />
             </div>
 
             <div className="pt-6 border-t border-outline-variant/10 flex items-center justify-between">
@@ -193,17 +191,33 @@ export const SettingsView: React.FC = () => {
                 <p className="text-xs text-on-surface-variant">Export your settings or clear local data.</p>
               </div>
               <div className="flex gap-2">
-                <button className="px-4 py-2 rounded-lg bg-surface-container-highest text-xs font-bold hover:bg-surface-container-highest/80 transition-all">
+                <button className="px-4 py-2 rounded-lg bg-surface-container-highest text-xs font-bold hover:bg-surface-container-highest/80 transition-all border border-outline-variant/10">
                   Export JSON
                 </button>
                 <button 
                   onClick={() => setShowClearConfirm(true)}
-                  className="px-4 py-2 rounded-lg bg-red-500/10 text-red-400 text-xs font-bold hover:bg-red-500/20 transition-all"
+                  className="px-4 py-2 rounded-lg bg-red-500/10 text-red-400 text-xs font-bold hover:bg-red-500/20 transition-all border border-red-500/10"
                 >
                   Clear All Data
                 </button>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Profile Identity Section */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-primary">account_circle</span>
+              <h4 className="text-lg font-bold font-headline">Profile Identity</h4>
+            </div>
+          </div>
+          <div className="bg-surface-container-low p-6 rounded-xl border border-outline-variant/10">
+            <p className="text-sm text-on-surface-variant leading-relaxed mb-6">
+              Your profile picture is stored locally on your device. Use a square image for the best appearance across the Luthier interface.
+            </p>
+            <ProfilePictureUpload />
           </div>
         </section>
 
@@ -372,7 +386,22 @@ export const SettingsView: React.FC = () => {
                 </div>
                 <div>
                   <p className="font-medium">Face Lock Security</p>
-                  <p className="text-xs text-on-surface-variant">Use your camera to unlock Hushh Kai automatically.</p>
+                  <p className="text-xs text-on-surface-variant">
+                    {faceRegistered 
+                      ? 'Face profile enrolled. Used for secure login.' 
+                      : 'Enroll your face to unlock Hushh Kai automatically.'}
+                  </p>
+                  {faceRegistered && (
+                    <button 
+                      onClick={() => {
+                        setFaceRegistered(false);
+                        setFaceDescriptor(null);
+                      }}
+                      className="mt-2 text-[10px] uppercase tracking-wider font-bold text-red-400 hover:text-red-300 transition-colors"
+                    >
+                      Reset Face Data
+                    </button>
+                  )}
                 </div>
               </div>
               <Tooltip content="Toggle face lock" position="left">
@@ -500,7 +529,7 @@ export const SettingsView: React.FC = () => {
         </section>
 
         {/* Save Actions */}
-        <div className="flex items-center justify-end gap-4 pt-8 border-t border-outline-variant/10">
+        <div className="flex items-center justify-end gap-6 pt-12 mt-8 border-t border-outline-variant/10">
           <Tooltip content="Lock the application immediately" position="top">
             <button 
               onClick={() => setIsLocked(true)}
